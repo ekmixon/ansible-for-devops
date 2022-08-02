@@ -9,10 +9,7 @@ def is_blue(string):
         'rgb(0,0,255)',
         'rgb(0%,0%,100%)',
     ]
-    if string in blue_values:
-        return True
-    else:
-        return False
+    return string in blue_values
 
 class TestModule(object):
     ''' Return dict of custom jinja tests. '''

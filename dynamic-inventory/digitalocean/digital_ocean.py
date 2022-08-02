@@ -153,7 +153,7 @@ class DoManager:
     def _url_builder(self, path):
         if path[0] == '/':
             path = path[1:]
-        return '%s/%s' % (self.api_endpoint, path)
+        return f'{self.api_endpoint}/{path}'
 
     def send(self, url, method='GET', data=None):
         url = self._url_builder(url)
@@ -178,7 +178,7 @@ class DoManager:
                         incomplete = False
 
         except ValueError as e:
-            sys.exit("Unable to parse result from %s: %s" % (url, e))
+            sys.exit(f"Unable to parse result from {url}: {e}")
         return resp_data
 
     def all_active_droplets(self):
@@ -207,7 +207,7 @@ class DoManager:
         return resp['domains']
 
     def show_droplet(self, droplet_id):
-        resp = self.send('droplets/%s' % droplet_id)
+        resp = self.send(f'droplets/{droplet_id}')
         return resp['droplet']
 
     def all_tags(self):
@@ -242,25 +242,24 @@ class DigitalOceanInventory(object):
         # Verify credentials were set
         if not hasattr(self, 'api_token'):
             msg = 'Could not find values for DigitalOcean api_token. They must be specified via either ini file, ' \
-                  'command line argument (--api-token), or environment variables (DO_API_TOKEN)\n'
+                      'command line argument (--api-token), or environment variables (DO_API_TOKEN)\n'
             sys.stderr.write(msg)
             sys.exit(-1)
 
         # env command, show DigitalOcean credentials
         if self.args.env:
-            print("DO_API_TOKEN=%s" % self.api_token)
+            print(f"DO_API_TOKEN={self.api_token}")
             sys.exit(0)
 
         # Manage cache
-        self.cache_filename = self.cache_path + "/ansible-digital_ocean.cache"
+        self.cache_filename = f"{self.cache_path}/ansible-digital_ocean.cache"
         self.cache_refreshed = False
 
         if self.is_cache_valid():
             self.load_from_cache()
-            if len(self.data) == 0:
-                if self.args.force_cache:
-                    sys.stderr.write('Cache is empty and --force-cache was specified\n')
-                    sys.exit(-1)
+            if not self.data and self.args.force_cache:
+                sys.stderr.write('Cache is empty and --force-cache was specified\n')
+                sys.exit(-1)
 
         self.manager = DoManager(self.api_token)
 
@@ -389,7 +388,11 @@ class DigitalOceanInventory(object):
         if self.args.force_cache and os.path.isfile(self.cache_filename):
             return
         # We always get fresh droplets
-        if self.is_cache_valid() and not (resource == 'droplets' or resource is None):
+        if (
+            self.is_cache_valid()
+            and resource != 'droplets'
+            and resource is not None
+        ):
             return
         if self.args.refresh_cache:
             resource = None
@@ -468,7 +471,7 @@ class DigitalOceanInventory(object):
             for group in (droplet['image']['slug'],
                           droplet['image']['name']):
                 if group:
-                    image = 'image_' + DigitalOceanInventory.to_safe(group)
+                    image = f'image_{DigitalOceanInventory.to_safe(group)}'
                     self.add_host(image, dest)
 
             if droplet['tags']:
@@ -530,10 +533,7 @@ class DigitalOceanInventory(object):
     @staticmethod
     def do_namespace(data):
         """ Returns a copy of the dictionary with all the keys put in a 'do_' namespace """
-        info = {}
-        for k, v in data.items():
-            info['do_' + k] = v
-        return info
+        return {f'do_{k}': v for k, v in data.items()}
 
 
 ###########################################################################
