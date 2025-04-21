@@ -3,7 +3,7 @@
   "description": "Example Express Node.js app.",
   "author": "Jeff Geerling <geerlingguy@mac.com>",
   "dependencies": {
-    "express": "4.x"
+    "express": "5.1.0"
   },
   "engine": "node >= 0.10.6"
 }
